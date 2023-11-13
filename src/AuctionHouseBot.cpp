@@ -130,8 +130,8 @@ void AuctionHouseBot::addNewAuctions(Player *AHBplayer, AHBConfig *config)
         return;
     }
 
-    uint32 minItems = config->GetMinItems();
-    uint32 maxItems = config->GetMaxItems();
+    uint32 minItems = config->GetMinItemsTotal();
+    uint32 maxItems = config->GetMaxItemsTotal();
 
     if (maxItems == 0)
     {
@@ -1580,7 +1580,7 @@ void AuctionHouseBot::Commands(uint32 command, uint32 ahMapID, uint32 col, char*
             config->SetMinItems(minItems);
         }
         break;
-    case 2:     //max items
+    case 2:     //max items TODO: This doesn't use the class var
         {
             char * param1 = strtok(args, " ");
             uint32 maxItems = (uint32) strtoul(param1, NULL, 0);
@@ -1719,11 +1719,12 @@ void AuctionHouseBot::LoadValues(AHBConfig *config)
 
     if (AHBSeller)
     {
-        //load min and max items
+        //load min and max items TODO: item bonus
 		config->SetMinItems(WorldDatabase.Query("SELECT minitems FROM mod_auctionhousebot WHERE auctionhouse = {}", config->GetAHID())->Fetch()->Get<uint32>());
 		config->SetMaxItems(WorldDatabase.Query("SELECT maxitems FROM mod_auctionhousebot WHERE auctionhouse = {}", config->GetAHID())->Fetch()->Get<uint32>());
+        config->SetItemBonus(WorldDatabase.Query("SELECT itemcountbonus FROM mod_auctionhousebot WHERE auctionhouse = {}", config->GetAHID())->Fetch()->Get<uint32>());
         //load percentages
-		uint32 greytg = WorldDatabase.Query("SELECT percentgreytradegoods FROM mod_auctionhousebot WHERE auctionhouse = {}", config->GetAHID())->Fetch()->Get<uint32>();
+        uint32 greytg = WorldDatabase.Query("SELECT percentgreytradegoods FROM mod_auctionhousebot WHERE auctionhouse = {}", config->GetAHID())->Fetch()->Get<uint32>();
 		uint32 whitetg = WorldDatabase.Query("SELECT percentwhitetradegoods FROM mod_auctionhousebot WHERE auctionhouse = {}", config->GetAHID())->Fetch()->Get<uint32>();
 		uint32 greentg = WorldDatabase.Query("SELECT percentgreentradegoods FROM mod_auctionhousebot WHERE auctionhouse = {}", config->GetAHID())->Fetch()->Get<uint32>();
 		uint32 bluetg = WorldDatabase.Query("SELECT percentbluetradegoods FROM mod_auctionhousebot WHERE auctionhouse = {}", config->GetAHID())->Fetch()->Get<uint32>();
@@ -1780,6 +1781,8 @@ void AuctionHouseBot::LoadValues(AHBConfig *config)
         {
             LOG_ERROR("module", "minItems                = {}", config->GetMinItems());
             LOG_ERROR("module", "maxItems                = {}", config->GetMaxItems());
+            LOG_ERROR("module", "minItemsTotal           = {}", config->GetMinItemsTotal());
+            LOG_ERROR("module", "maxItemsTotal           = {}", config->GetMaxItemsTotal());
             LOG_ERROR("module", "percentGreyTradeGoods   = {}", config->GetPercentages(AHB_GREY_TG));
             LOG_ERROR("module", "percentWhiteTradeGoods  = {}", config->GetPercentages(AHB_WHITE_TG));
             LOG_ERROR("module", "percentGreenTradeGoods  = {}", config->GetPercentages(AHB_GREEN_TG));

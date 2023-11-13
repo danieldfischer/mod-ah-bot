@@ -150,6 +150,9 @@ private:
     uint32 orangeItems;
     uint32 yellowItems;
 
+    uint32 itemCountBonus; 
+    uint32 itemCountBonusCalc;
+
 public:
     AHBConfig(uint32 ahid)
     {
@@ -181,18 +184,30 @@ public:
     {
         return AHFID;
     }
+    void SetItemBonus(uint32 value)
+    {
+        itemCountBonus = value;
+        itemCountBonusCalc = value / 10;
+    }
     void SetMinItems(uint32 value)
     {
         minItems = value;
     }
     uint32 GetMinItems()
     {
-        if ((minItems == 0) && (maxItems))
+        if ((minItems == 0) && (maxItems))  // This doesn't make sense, if min is 0, use 0
             return maxItems;
         else if ((maxItems) && (minItems > maxItems))
             return maxItems;
         else
             return minItems;
+    }
+    uint32 GetMinItemsTotal()
+    {
+        if ((maxItems) && (minItems > maxItems))
+            return GetMaxItemsTotal();
+        else
+            return minItems + itemCountBonusCalc;
     }
     void SetMaxItems(uint32 value)
     {
@@ -204,16 +219,21 @@ public:
     {
         return maxItems;
     }
+    uint32 GetMaxItemsTotal()
+    {
+        return maxItems + itemCountBonusCalc;
+    }
     void SetPercentages(uint32 greytg, uint32 whitetg, uint32 greentg, uint32 bluetg, uint32 purpletg, uint32 orangetg, uint32 yellowtg, uint32 greyi, uint32 whitei, uint32 greeni, uint32 bluei, uint32 purplei, uint32 orangei, uint32 yellowi)
     {
         uint32 totalPercent = greytg + whitetg + greentg + bluetg + purpletg + orangetg + yellowtg + greyi + whitei + greeni + bluei + purplei + orangei + yellowi;
 
+        // Only load defaults if %s aren't set.
         if (totalPercent == 0)
         {
-            maxItems = 0;
-        }
-        else if (totalPercent != 100)
-        {
+//            maxItems = 0;
+//        }
+//        else if (totalPercent != 100)
+//        {
             greytg = 0;
             whitetg = 27;
             greentg = 12;
@@ -229,6 +249,7 @@ public:
             orangei = 0;
             yellowi = 0;
         }
+
         percentGreyTradeGoods = greytg;
         percentWhiteTradeGoods = whitetg;
         percentGreenTradeGoods = greentg;
@@ -838,6 +859,7 @@ public:
     }
     void CalculatePercents()
     {
+        // TODO: Adjust as needed to allow ratios. Change 100 to maxPercent?
         greytgp = (uint32) (((double)percentGreyTradeGoods / 100.0) * maxItems);
         whitetgp = (uint32) (((double)percentWhiteTradeGoods / 100.0) * maxItems);
         greentgp = (uint32) (((double)percentGreenTradeGoods / 100.0) * maxItems);
