@@ -150,8 +150,13 @@ private:
     uint32 orangeItems;
     uint32 yellowItems;
 
-    uint32 itemCountBonus; 
+    uint32 itemCountBonus;
+
+    // Calculated fields
     uint32 itemCountBonusCalc;
+    uint32 totalRatioTradeGoods;
+    uint32 totalRatioItems;
+    uint32 totalRatio;
 
 public:
     AHBConfig(uint32 ahid)
@@ -225,10 +230,14 @@ public:
     }
     void SetPercentages(uint32 greytg, uint32 whitetg, uint32 greentg, uint32 bluetg, uint32 purpletg, uint32 orangetg, uint32 yellowtg, uint32 greyi, uint32 whitei, uint32 greeni, uint32 bluei, uint32 purplei, uint32 orangei, uint32 yellowi)
     {
-        uint32 totalPercent = greytg + whitetg + greentg + bluetg + purpletg + orangetg + yellowtg + greyi + whitei + greeni + bluei + purplei + orangei + yellowi;
+        // This is called by the Load function.
+        // TODO: Calculate total ratio to use for actual %s.
 
-        // Only load defaults if %s aren't set.
-        if (totalPercent == 0)
+        totalRatioTradeGoods = greytg + whitetg + greentg + bluetg + purpletg + orangetg + yellowtg;
+        totalRatioItems = greyi + whitei + greeni + bluei + purplei + orangei + yellowi;
+        totalRatio = totalRatioTradeGoods + totalRatioItems;
+        // Only load defaults if no %s are set.
+        if (totalRatio == 0)
         {
 //            maxItems = 0;
 //        }
@@ -241,6 +250,7 @@ public:
             purpletg = 1;
             orangetg = 0;
             yellowtg = 0;
+            totalRatioTradeGoods = 50;
             greyi = 0;
             whitei = 10;
             greeni = 30;
@@ -248,6 +258,7 @@ public:
             purplei = 2;
             orangei = 0;
             yellowi = 0;
+            totalRatioItems = 50;
         }
 
         percentGreyTradeGoods = greytg;
@@ -859,23 +870,22 @@ public:
     }
     void CalculatePercents()
     {
-        // TODO: Adjust as needed to allow ratios. Change 100 to maxPercent?
-        greytgp = (uint32) (((double)percentGreyTradeGoods / 100.0) * maxItems);
-        whitetgp = (uint32) (((double)percentWhiteTradeGoods / 100.0) * maxItems);
-        greentgp = (uint32) (((double)percentGreenTradeGoods / 100.0) * maxItems);
-        bluetgp = (uint32) (((double)percentBlueTradeGoods / 100.0) * maxItems);
-        purpletgp = (uint32) (((double)percentPurpleTradeGoods / 100.0) * maxItems);
-        orangetgp = (uint32) (((double)percentOrangeTradeGoods / 100.0) * maxItems);
-        yellowtgp = (uint32) (((double)percentYellowTradeGoods / 100.0) * maxItems);
-        greyip = (uint32) (((double)percentGreyItems / 100.0) * maxItems);
-        whiteip = (uint32) (((double)percentWhiteItems / 100.0) * maxItems);
-        greenip = (uint32) (((double)percentGreenItems / 100.0) * maxItems);
-        blueip = (uint32) (((double)percentBlueItems / 100.0) * maxItems);
-        purpleip = (uint32) (((double)percentPurpleItems / 100.0) * maxItems);
-        orangeip = (uint32) (((double)percentOrangeItems / 100.0) * maxItems);
-        yellowip = (uint32) (((double)percentYellowItems / 100.0) * maxItems);
+        greytgp = (uint32) (((double)percentGreyTradeGoods / totalRatio) * GetMaxItemsTotal());
+        whitetgp = (uint32) (((double)percentWhiteTradeGoods / totalRatio) * GetMaxItemsTotal());
+        greentgp = (uint32) (((double)percentGreenTradeGoods / totalRatio) * GetMaxItemsTotal());
+        bluetgp = (uint32) (((double)percentBlueTradeGoods / totalRatio) * GetMaxItemsTotal());
+        purpletgp = (uint32) (((double)percentPurpleTradeGoods / totalRatio) * GetMaxItemsTotal());
+        orangetgp = (uint32) (((double)percentOrangeTradeGoods / totalRatio) * GetMaxItemsTotal());
+        yellowtgp = (uint32) (((double)percentYellowTradeGoods / totalRatio) * GetMaxItemsTotal());
+        greyip = (uint32) (((double)percentGreyItems / totalRatio) * GetMaxItemsTotal());
+        whiteip = (uint32) (((double)percentWhiteItems / totalRatio) * GetMaxItemsTotal());
+        greenip = (uint32) (((double)percentGreenItems / totalRatio) * GetMaxItemsTotal());
+        blueip = (uint32) (((double)percentBlueItems / totalRatio) * GetMaxItemsTotal());
+        purpleip = (uint32) (((double)percentPurpleItems / totalRatio) * GetMaxItemsTotal());
+        orangeip = (uint32) (((double)percentOrangeItems / totalRatio) * GetMaxItemsTotal());
+        yellowip = (uint32) (((double)percentYellowItems / totalRatio) * GetMaxItemsTotal());
         uint32 total = greytgp + whitetgp + greentgp + bluetgp + purpletgp + orangetgp + yellowtgp + greyip + whiteip + greenip + blueip + purpleip + orangeip + yellowip;
-        int32 diff = (maxItems - total);
+        int32 diff = (GetMaxItemsTotal() - total);
         if (diff < 0)
         {
             if ((whiteip - diff) > 0)

@@ -371,10 +371,20 @@ void AuctionHouseBot::addNewAuctions(Player *AHBplayer, AHBConfig *config)
             uint64 bidPrice = 0;
             uint32 stackCount = 1;
 
+            // If BuyPrice or SellPrice missing, use other. BuyPrice typically 4x SellPrice
+            // TODO: Make a config option "EstimatePrice"
             if (SellMethod)
+            {
                 buyoutPrice = prototype->BuyPrice;
+                if (buyoutPrice == 0)
+                    buyoutPrice = prototype->SellPrice * 4;
+            }
             else
+            {
                 buyoutPrice = prototype->SellPrice;
+                if (buyoutPrice == 0)
+                    buyoutPrice = prototype->BuyPrice / 4;
+            }
 
             if (prototype->Quality <= AHB_MAX_QUALITY)
             {
@@ -498,7 +508,9 @@ void AuctionHouseBot::addNewAuctionBuyerBotBid(Player *AHBplayer, AHBConfig *con
         return;
     }
 
-    QueryResult result = CharacterDatabase.Query("SELECT id FROM auctionhouse WHERE itemowner<>{} AND buyguid<>{}", AHBplayerGUID, AHBplayerGUID);
+    // TODO: Config option for multi-bids
+//    QueryResult result = CharacterDatabase.Query("SELECT id FROM auctionhouse WHERE itemowner<>{} AND buyguid<>{}", AHBplayerGUID, AHBplayerGUID);
+    QueryResult result = CharacterDatabase.Query("SELECT id FROM auctionhouse WHERE itemowner<>{}", AHBplayerGUID);
 
     if (!result)
         return;
@@ -516,6 +528,9 @@ void AuctionHouseBot::addNewAuctionBuyerBotBid(Player *AHBplayer, AHBConfig *con
         possibleBids.push_back(tmpdata);
     }while (result->NextRow());
 
+    // TODO: Modify by max items
+    // TODO: Make this a config option
+    // TODO: Make an option to scale by player count.
     for (uint32 count = 1; count <= config->GetBidsPerInterval(); ++count)
     {
         // Do we have anything to bid? If not, stop here.
@@ -524,6 +539,7 @@ void AuctionHouseBot::addNewAuctionBuyerBotBid(Player *AHBplayer, AHBConfig *con
             //if (debug_Out) sLog->outError( "AHBuyer: I have no items to bid on.");
             count = config->GetBidsPerInterval();
             continue;
+            // TODO: Why does he just not exit the loop? Weird way to do so.
         }
 
         // Choose random auction from possible auctions
@@ -564,6 +580,7 @@ void AuctionHouseBot::addNewAuctionBuyerBotBid(Player *AHBplayer, AHBConfig *con
         long double bidMax = 0;
 
         // check that bid has acceptable value and take bid based on vendorprice, stacksize and quality
+        // TODO: Add EstimatedPrice code
         if (BuyMethod)
         {
             if (prototype->Quality <= AHB_MAX_QUALITY)
@@ -596,6 +613,7 @@ void AuctionHouseBot::addNewAuctionBuyerBotBid(Player *AHBplayer, AHBConfig *con
         }
 
         // check some special items, and do recalculating to their prices
+        // TODO: Why is this?
         switch (prototype->Class)
         {
             // ammo
@@ -748,6 +766,27 @@ void AuctionHouseBot::Update()
 
 void AuctionHouseBot::Initialize()
 {
+
+    //
+    // check if the AHBot account/GUID in the config actually exists
+    //
+    // TODO: For some reason I couldn't get either error to trigger.
+
+    if ((AHBplayerAccount != 0) || (AHBplayerGUID != 0))
+    {
+        QueryResult result = CharacterDatabase.Query("SELECT 1 FROM characters WHERE account = {} AND guid = {}", AHBplayerAccount, AHBplayerGUID);
+        if (!result)
+        {
+            LOG_ERROR("module", "AuctionHouseBot: The account/GUID-information set for your AHBot is incorrect (account: {} guid: {})", AHBplayerAccount, AHBplayerGUID);
+            return;
+        }
+    }
+    else
+    {
+        LOG_ERROR("module", "AuctionHouseBot: The account/GUID-information is not set for your AHBot");
+        return;
+    }
+
     DisableItemStore.clear();
     QueryResult result = WorldDatabase.Query("SELECT item FROM mod_auctionhousebot_disabled_items");
 
@@ -767,20 +806,6 @@ void AuctionHouseBot::Initialize()
         LoadValues(&HordeConfig);
     }
     LoadValues(&NeutralConfig);
-
-    //
-    // check if the AHBot account/GUID in the config actually exists
-    //
-
-    if ((AHBplayerAccount != 0) || (AHBplayerGUID != 0))
-    {
-        QueryResult result = CharacterDatabase.Query("SELECT 1 FROM characters WHERE account = {} AND guid = {}", AHBplayerAccount, AHBplayerGUID);
-        if (!result)
-        {
-           LOG_ERROR("module", "AuctionHouseBot: The account/GUID-information set for your AHBot is incorrect (account: {} guid: {})", AHBplayerAccount, AHBplayerGUID);
-           return;
-        }
-    }
 
     if (AHBSeller)
     {
@@ -859,6 +884,9 @@ void AuctionHouseBot::Initialize()
                 break;
             }
 
+            // TODO: This seems backwards, also would rather it check if both BuyPrice & SellPrice are empty.
+            //       * This should be a config option.
+            /*
             if (SellMethod)
             {
                 if (itr->second.BuyPrice == 0)
@@ -869,6 +897,9 @@ void AuctionHouseBot::Initialize()
                 if (itr->second.SellPrice == 0)
                     continue;
             }
+            */
+            if (itr->second.BuyPrice == 0 && itr->second.SellPrice == 0)
+                continue;
 
             if (itr->second.Quality > 6)
                 continue;
@@ -966,6 +997,9 @@ void AuctionHouseBot::Initialize()
                 if ((!isLootTG) && (!isVendorTG))
                     continue;
             }
+
+            // Disable items by Deprecated Flag
+            // TODO: Check if Flags includes 16 (bit 4) or Flags2 includes ?
 
             // Disable items by Id
             if (DisableItemStore.find(itr->second.ItemId) != DisableItemStore.end())
@@ -1263,57 +1297,77 @@ void AuctionHouseBot::Initialize()
                 continue;
             }
 
-            switch (itr->second.Quality)
-            {
-            case AHB_GREY:
-                if (itr->second.Class == ITEM_CLASS_TRADE_GOODS)
+            // Is Trade Good?
+            bool isTradeGood = false;
+            if (itr->second.Class == ITEM_CLASS_TRADE_GOODS)
+                isTradeGood = true;
+            // Or if Gem switch activated, catergorize simple & uncut gems as Trade Goods
+            // TODO: Create conf option for this
+            else if (itr->second.Class == ITEM_CLASS_GEM && itr->second.GemProperties == 0)
+                isTradeGood = true;
+
+            if (isTradeGood)
+                switch (itr->second.Quality)
+                {
+                case AHB_GREY:
                     greyTradeGoodsBin.push_back(itr->second.ItemId);
-                else
-                    greyItemsBin.push_back(itr->second.ItemId);
-                break;
+                    break;
 
-            case AHB_WHITE:
-                if (itr->second.Class == ITEM_CLASS_TRADE_GOODS)
+                case AHB_WHITE:
                     whiteTradeGoodsBin.push_back(itr->second.ItemId);
-                else
-                    whiteItemsBin.push_back(itr->second.ItemId);
-                break;
+                    break;
 
-            case AHB_GREEN:
-                if (itr->second.Class == ITEM_CLASS_TRADE_GOODS)
+                case AHB_GREEN:
                     greenTradeGoodsBin.push_back(itr->second.ItemId);
-                else
-                    greenItemsBin.push_back(itr->second.ItemId);
-                break;
+                    break;
 
-            case AHB_BLUE:
-                if (itr->second.Class == ITEM_CLASS_TRADE_GOODS)
+                case AHB_BLUE:
                     blueTradeGoodsBin.push_back(itr->second.ItemId);
-                else
-                    blueItemsBin.push_back(itr->second.ItemId);
-                break;
+                    break;
 
-            case AHB_PURPLE:
-                if (itr->second.Class == ITEM_CLASS_TRADE_GOODS)
+                case AHB_PURPLE:
                     purpleTradeGoodsBin.push_back(itr->second.ItemId);
-                else
-                    purpleItemsBin.push_back(itr->second.ItemId);
-                break;
+                    break;
 
-            case AHB_ORANGE:
-                if (itr->second.Class == ITEM_CLASS_TRADE_GOODS)
+                case AHB_ORANGE:
                     orangeTradeGoodsBin.push_back(itr->second.ItemId);
-                else
-                    orangeItemsBin.push_back(itr->second.ItemId);
-                break;
+                    break;
 
-            case AHB_YELLOW:
-                if (itr->second.Class == ITEM_CLASS_TRADE_GOODS)
+                case AHB_YELLOW:
                     yellowTradeGoodsBin.push_back(itr->second.ItemId);
-                else
+                    break;
+                }
+            else
+                switch (itr->second.Quality)
+                {
+                case AHB_GREY:
+                    greyItemsBin.push_back(itr->second.ItemId);
+                    break;
+
+                case AHB_WHITE:
+                    whiteItemsBin.push_back(itr->second.ItemId);
+                    break;
+
+                case AHB_GREEN:
+                    greenItemsBin.push_back(itr->second.ItemId);
+                    break;
+
+                case AHB_BLUE:
+                    blueItemsBin.push_back(itr->second.ItemId);
+                    break;
+
+                case AHB_PURPLE:
+                    purpleItemsBin.push_back(itr->second.ItemId);
+                    break;
+
+                case AHB_ORANGE:
+                    orangeItemsBin.push_back(itr->second.ItemId);
+                    break;
+
+                case AHB_YELLOW:
                     yellowItemsBin.push_back(itr->second.ItemId);
-                break;
-            }
+                    break;
+                }
         }
 
         if ((greyTradeGoodsBin.size() == 0) &&
@@ -1336,7 +1390,7 @@ void AuctionHouseBot::Initialize()
         }
 
         LOG_INFO("module", "AuctionHouseBot:");
-        LOG_INFO("module", "{} disabled items", uint32(DisableItemStore.size()));
+        LOG_INFO("module", "{} disabled items in mod_auctionhousebot_disabled_items", uint32(DisableItemStore.size()));
         LOG_INFO("module", "loaded {} grey trade goods", uint32(greyTradeGoodsBin.size()));
         LOG_INFO("module", "loaded {} white trade goods", uint32(whiteTradeGoodsBin.size()));
         LOG_INFO("module", "loaded {} green trade goods", uint32(greenTradeGoodsBin.size()));
