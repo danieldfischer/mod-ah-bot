@@ -1176,6 +1176,10 @@ public:
     {
         return buyerBidsPerInterval;
     }
+    uint32 GetTotalBidsPerInterval()
+    {
+        return buyerBidsPerInterval + itemCountBonusCalc / 1000;
+    }
     ~AHBConfig()
     {
     }

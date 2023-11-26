@@ -528,16 +528,17 @@ void AuctionHouseBot::addNewAuctionBuyerBotBid(Player *AHBplayer, AHBConfig *con
         possibleBids.push_back(tmpdata);
     }while (result->NextRow());
 
-    // TODO: Modify by max items
+    // Note: Modified by max item bonus.
     // TODO: Make this a config option
     // TODO: Make an option to scale by player count.
-    for (uint32 count = 1; count <= config->GetBidsPerInterval(); ++count)
+
+    for (uint32 count = 1; count <= config->GetTotalBidsPerInterval(); ++count)
     {
         // Do we have anything to bid? If not, stop here.
         if (possibleBids.empty())
         {
             //if (debug_Out) sLog->outError( "AHBuyer: I have no items to bid on.");
-            count = config->GetBidsPerInterval();
+            count = config->GetTotalBidsPerInterval();
             continue;
             // TODO: Why does he just not exit the loop? Weird way to do so.
         }
@@ -578,15 +579,22 @@ void AuctionHouseBot::addNewAuctionBuyerBotBid(Player *AHBplayer, AHBConfig *con
         // Prepare portion from maximum bid
         double bidrate = static_cast<double>(urand(1, 100)) / 100;
         long double bidMax = 0;
+        uint32 itemPrice = 0;
 
         // check that bid has acceptable value and take bid based on vendorprice, stacksize and quality
-        // TODO: Add EstimatedPrice code
+        // TODO: Still not the most efficient code, but better than before and more readable.
         if (BuyMethod)
         {
             if (prototype->Quality <= AHB_MAX_QUALITY)
             {
-                if (currentprice < prototype->SellPrice * pItem->GetCount() * config->GetBuyerPrice(prototype->Quality))
-                    bidMax = prototype->SellPrice * pItem->GetCount() * config->GetBuyerPrice(prototype->Quality);
+                if (prototype->SellPrice == 0)
+                    itemPrice = prototype->BuyPrice / 4;
+                else
+                    itemPrice = prototype->SellPrice;
+                itemPrice = itemPrice * pItem->GetCount() * config->GetBuyerPrice(prototype->Quality);
+
+                if (currentprice < itemPrice)
+                    bidMax = itemPrice;
             }
             else
             {
