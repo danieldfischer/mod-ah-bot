@@ -501,11 +501,18 @@ void AuctionHouseBot::addNewAuctions(Player *AHBplayer, AHBConfig *config)
 }
 void AuctionHouseBot::addNewAuctionBuyerBotBid(Player *AHBplayer, AHBConfig *config, WorldSession *session)
 {
+    // TODO: seems like it just shouldnt call this if it is disabled.
     if (!AHBBuyer)
     {
         if (debug_Out)
             LOG_ERROR("module", "AHBuyer: Disabled");
         return;
+    }
+
+    if (debug_Out)
+    {
+        LOG_INFO("module", "-------------------------------------------------");
+        LOG_INFO("module", "AHBuyer: Starting");
     }
 
     // TODO: Config option for multi-bids
@@ -530,7 +537,12 @@ void AuctionHouseBot::addNewAuctionBuyerBotBid(Player *AHBplayer, AHBConfig *con
 
     // Note: Modified by max item bonus.
     // TODO: Make this a config option
-    // TODO: Make an option to scale by player count.
+    //  Make an option to scale by player count.
+    //  The ID doesn't seem to be the one we expect.
+    if (debug_Out)
+    {
+        LOG_INFO("module", "AHBuyer: Placing {} bids from {} auctionhouse.", config->GetTotalBidsPerInterval(), config->GetAHFID());
+    }
 
     for (uint32 count = 1; count <= config->GetTotalBidsPerInterval(); ++count)
     {
@@ -587,27 +599,7 @@ void AuctionHouseBot::addNewAuctionBuyerBotBid(Player *AHBplayer, AHBConfig *con
         {
             if (prototype->Quality <= AHB_MAX_QUALITY)
             {
-                if (prototype->SellPrice == 0)
-                    itemPrice = prototype->BuyPrice / 4;
-                else
-                    itemPrice = prototype->SellPrice;
-                itemPrice = itemPrice * pItem->GetCount() * config->GetBuyerPrice(prototype->Quality);
-
-                if (currentprice < itemPrice)
-                    bidMax = itemPrice;
-            }
-            else
-            {
-                // quality is something it shouldn't be, let's get out of here
-                if (debug_Out)
-                    LOG_ERROR("module", "AHBuyer: Quality {} not Supported", prototype->Quality);
-                    continue;
-            }
-        }
-        else
-        {
-            if (prototype->Quality <= AHB_MAX_QUALITY)
-            {
+                // TODO: Does logic need to be added similar to sell method for missing price data?
                 if (currentprice < prototype->BuyPrice * pItem->GetCount() * config->GetBuyerPrice(prototype->Quality))
                     bidMax = prototype->BuyPrice * pItem->GetCount() * config->GetBuyerPrice(prototype->Quality);
             }
@@ -616,7 +608,29 @@ void AuctionHouseBot::addNewAuctionBuyerBotBid(Player *AHBplayer, AHBConfig *con
                 // quality is something it shouldn't be, let's get out of here
                 if (debug_Out)
                     LOG_ERROR("module", "AHBuyer: Quality {} not Supported", prototype->Quality);
-                    continue;
+                continue;
+            }
+        }
+        else
+        {
+            if (prototype->Quality <= AHB_MAX_QUALITY)
+            {
+                if (prototype->SellPrice == 0)
+                    itemPrice = prototype->BuyPrice / 5;  // was 25% for many resources and some items, but majority and new standard is 20%
+                else
+                    itemPrice = prototype->SellPrice;
+                itemPrice = itemPrice * pItem->GetCount() * config->GetBuyerPrice(prototype->Quality);
+
+                if (currentprice < itemPrice)
+                    bidMax = itemPrice;
+                // else fail out later
+            }
+            else
+            {
+                // quality is something it shouldn't be, let's get out of here
+                if (debug_Out)
+                    LOG_ERROR("module", "AHBuyer: Quality {} not Supported", prototype->Quality);
+                continue;
             }
         }
 
@@ -635,19 +649,23 @@ void AuctionHouseBot::addNewAuctionBuyerBotBid(Player *AHBplayer, AHBConfig *con
         if (bidMax == 0)
         {
             // quality check failed to get bidmax, let's get out of here
+            // TODO: Should really log the reasons better, and fail out as needed instead of this random catch all.
             continue;
         }
 
         // Calculate our bid
-        long double bidvalue = currentprice + ((bidMax - currentprice) * bidrate);
+        // Note: Previously bids can't fail as long as they under the max.
+        //  1. bidrate is a random 1-100%.
+        //  2. Why is bidrate only applying to the difference?
+//        long double bidvalue = currentprice + ((bidMax - currentprice) * bidrate);
+        // Note: New logic - fully random bid
+        //  Sets a min bid based on itemvalue. ex: if sellprice model, always bid at least sellprice.
+        // TODO: check if buyprice should be used.
+        long double bidvalue = prototype->SellPrice + (bidMax - prototype->SellPrice) * bidrate;
         // Convert to uint32
         uint32 bidprice = static_cast<uint32>(bidvalue);
 
-        // Check our bid is high enough to be valid. If not, correct it to minimum.
-        if ((currentprice + auction->GetAuctionOutBid()) > bidprice)
-            bidprice = currentprice + auction->GetAuctionOutBid();
-
-
+        // Note: Moved this farther up to log failed bids
         if (debug_Out)
         {
             LOG_INFO("module", "-------------------------------------------------");
@@ -675,6 +693,17 @@ void AuctionHouseBot::addNewAuctionBuyerBotBid(Player *AHBplayer, AHBConfig *con
             LOG_INFO("module", "AHBuyer: Item Level: {}", prototype->ItemLevel);
             LOG_INFO("module", "AHBuyer: Ammo Type: {}", prototype->AmmoType);
             LOG_INFO("module", "-------------------------------------------------");
+        }
+
+        // Note: If bidprice isn't high enough, skip this bid.
+        //  Previously - Check our bid is high enough to be valid. If not, correct it to minimum.
+        //    The next bid has to be more than a threshold, ex: 2 copper?
+        //    With the prior bidvalue logic this just meant if an item was priced under the max a bid would always be successfull.
+        if ((currentprice + auction->GetAuctionOutBid()) > bidprice)
+            //            bidprice = currentprice + auction->GetAuctionOutBid();
+        {
+            LOG_INFO("module", "AHBuyer: Random bid too low, skipping.");
+            continue;
         }
 
         // Check whether we do normal bid, or buyout
@@ -1008,6 +1037,12 @@ void AuctionHouseBot::Initialize()
 
             // Disable items by Deprecated Flag
             // TODO: Check if Flags includes 16 (bit 4) or Flags2 includes ?
+            if ((itr->second.Flags & 16) or (itr->second.Flags2 & 8192))
+            {
+                if (debug_Out_Filters)
+                    LOG_ERROR("module", "AuctionHouseBot: Item {} disabled (Deprecated/PTR/Beta/Unused Item)", itr->second.ItemId);
+                continue;
+            }
 
             // Disable items by Id
             if (DisableItemStore.find(itr->second.ItemId) != DisableItemStore.end())
