@@ -22,7 +22,9 @@
 
 #include "Common.h"
 #include "ObjectGuid.h"
+#include "AuctionHouseMgr.h"
 
+<<<<<<< HEAD
 struct AuctionEntry;
 class Player;
 class WorldSession;
@@ -1087,36 +1089,16 @@ public:
         purpleTGoods = 0;
         orangeTGoods = 0;
         yellowTGoods = 0;
+=======
+#include "AuctionHouseBotCommon.h"
+#include "AuctionHouseBotConfig.h"
+>>>>>>> 450239ca6bc4d208881c053b1189fd74534e35a4
 
-        greyItems = 0;
-        whiteItems = 0;
-        greenItems = 0;
-        blueItems = 0;
-        purpleItems = 0;
-        orangeItems = 0;
-        yellowItems = 0;
-    }
+struct AuctionEntry;
+class  Player;
+class  WorldSession;
 
-    uint32 TotalItemCounts()
-    {
-        return(
-        greyTGoods +
-        whiteTGoods +
-        greenTGoods +
-        blueTGoods +
-        purpleTGoods +
-        orangeTGoods +
-        yellowTGoods +
-
-        greyItems +
-        whiteItems +
-        greenItems +
-        blueItems +
-        purpleItems +
-        orangeItems +
-        yellowItems);
-    }
-
+<<<<<<< HEAD
     uint32 GetItemCounts(uint32 color)
     {
         switch(color)
@@ -1184,113 +1166,53 @@ public:
     {
     }
 };
+=======
+>>>>>>> 450239ca6bc4d208881c053b1189fd74534e35a4
 class AuctionHouseBot
 {
 private:
+    uint32     _account;
+    uint32     _id;
 
-    bool debug_Out;
-    bool debug_Out_Filters;
+    AHBConfig* _allianceConfig;
+    AHBConfig* _hordeConfig;
+    AHBConfig* _neutralConfig;
 
-    bool AHBSeller;
-    bool AHBBuyer;
-    bool BuyMethod;
-    bool SellMethod;
+    time_t     _lastrun_a_sec;
+    time_t     _lastrun_h_sec;
+    time_t     _lastrun_n_sec;
 
-    uint32 AHBplayerAccount;
-    ObjectGuid::LowType AHBplayerGUID;
-    uint32 ItemsPerCycle;
+    //
+    // Main operations
+    //
 
-    //Begin Filters
+    void Sell(Player *AHBplayer, AHBConfig *config);
+    void Buy (Player *AHBplayer, AHBConfig *config, WorldSession *session);
 
-    bool Vendor_Items;
-    bool Loot_Items;
-    bool Other_Items;
-    bool Vendor_TGs;
-    bool Loot_TGs;
-    bool Other_TGs;
-
-    bool No_Bind;
-    bool Bind_When_Picked_Up;
-    bool Bind_When_Equipped;
-    bool Bind_When_Use;
-    bool Bind_Quest_Item;
-
-    bool DisablePermEnchant;
-    bool DisableConjured;
-    bool DisableGems;
-    bool DisableMoney;
-    bool DisableMoneyLoot;
-    bool DisableLootable;
-    bool DisableKeys;
-    bool DisableDuration;
-    bool DisableBOP_Or_Quest_NoReqLevel;
-
-    bool DisableWarriorItems;
-    bool DisablePaladinItems;
-    bool DisableHunterItems;
-    bool DisableRogueItems;
-    bool DisablePriestItems;
-    bool DisableDKItems;
-    bool DisableShamanItems;
-    bool DisableMageItems;
-    bool DisableWarlockItems;
-    bool DisableUnusedClassItems;
-    bool DisableDruidItems;
-
-    uint32 DisableItemsBelowLevel;
-    uint32 DisableItemsAboveLevel;
-    uint32 DisableTGsBelowLevel;
-    uint32 DisableTGsAboveLevel;
-    uint32 DisableItemsBelowGUID;
-    uint32 DisableItemsAboveGUID;
-    uint32 DisableTGsBelowGUID;
-    uint32 DisableTGsAboveGUID;
-    uint32 DisableItemsBelowReqLevel;
-    uint32 DisableItemsAboveReqLevel;
-    uint32 DisableTGsBelowReqLevel;
-    uint32 DisableTGsAboveReqLevel;
-    uint32 DisableItemsBelowReqSkillRank;
-    uint32 DisableItemsAboveReqSkillRank;
-    uint32 DisableTGsBelowReqSkillRank;
-    uint32 DisableTGsAboveReqSkillRank;
-
-    std::set<uint32> DisableItemStore;
-
-    //End Filters
-
-    AHBConfig AllianceConfig;
-    AHBConfig HordeConfig;
-    AHBConfig NeutralConfig;
-
-    time_t _lastrun_a;
-    time_t _lastrun_h;
-    time_t _lastrun_n;
+    //
+    // Utilities
+    //
 
     inline uint32 minValue(uint32 a, uint32 b) { return a <= b ? a : b; };
-    void addNewAuctions(Player *AHBplayer, AHBConfig *config);
-    void addNewAuctionBuyerBotBid(Player *AHBplayer, AHBConfig *config, WorldSession *session);
 
-//    friend class ACE_Singleton<AuctionHouseBot, ACE_Null_Mutex>;
-    AuctionHouseBot();
+    uint32 getNofAuctions(AHBConfig* config, AuctionHouseObject* auctionHouse, ObjectGuid guid);
+    uint32 getStackCount(AHBConfig* config, uint32 max);
+    uint32 getElapsedTime(uint32 timeClass);
+    uint32 getElement(std::set<uint32> set, int index);
 
 public:
-    static AuctionHouseBot* instance()
-    {
-        static AuctionHouseBot instance;
-        return &instance;
-    }
-
+    AuctionHouseBot(uint32 account, uint32 id);
     ~AuctionHouseBot();
+
+    void Initialize(AHBConfig* allianceConfig, AHBConfig* hordeConfig, AHBConfig* neutralConfig);
     void Update();
-    void Initialize();
-    void InitializeConfiguration();
-    void LoadValues(AHBConfig*);
-    void DecrementItemCounts(AuctionEntry* ah, uint32 itemEntry);
+
+    void DecrementItemCounts(AuctionEntry* ah);
     void IncrementItemCounts(AuctionEntry* ah);
-    void Commands(uint32, uint32, uint32, char*);
-    ObjectGuid::LowType GetAHBplayerGUID() { return AHBplayerGUID; };
+
+    void Commands(AHBotCommand command, uint32 ahMapID, uint32 col, char* args);
+
+    ObjectGuid::LowType GetAHBplayerGUID() { return _id; };
 };
 
-#define auctionbot AuctionHouseBot::instance()
-
-#endif
+#endif // AUCTION_HOUSE_BOT_H
