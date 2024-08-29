@@ -142,6 +142,15 @@ private:
     uint32 orangeItems;
     uint32 yellowItems;
 
+    //
+    // Custom vars
+    //
+    uint32 itemCountBonus;
+    uint32 itemCountBonusCalc;
+    uint32 totalRatioTradeGoods;
+    uint32 totalRatioItems;
+    uint32 totalRatio;
+
     void   InitializeFromFile();
     void   InitializeFromSql(std::set<uint32> botsIds);
 
@@ -286,7 +295,7 @@ public:
     ~AHBConfig();
 
     //
-    // Ruotines
+    // Routines
     //
 
     void   Initialize(std::set<uint32> botsIds);
@@ -343,6 +352,15 @@ public:
     uint32 TotalItemCounts   ();
 
     uint32 GetItemCounts     (uint32 color);
+
+    //
+    // Custom
+    // 
+    void   SetItemBonus    (uint32 value);
+    uint32 GetMinItemsTotal();
+    uint32 GetMaxItemsTotal();
+    uint32 GetTotalBidsPerInterval();
+
 };
 
 //

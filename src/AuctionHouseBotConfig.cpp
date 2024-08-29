@@ -610,7 +610,7 @@ void AHBConfig::SetMinItems(uint32 value)
 
 uint32 AHBConfig::GetMinItems()
 {
-    if ((minItems == 0) && (maxItems))
+    if ((minItems == 0) && (maxItems)) // This doesn't make sense, if min is 0, why not use 0?
     {
         return maxItems;
     }
@@ -652,6 +652,17 @@ void AHBConfig::SetPercentages(
     uint32 orangei,
     uint32 yellowi)
 {
+    //
+    // This is called by the Load function.
+    //
+    totalRatioTradeGoods = greytg + whitetg + greentg + bluetg + purpletg + orangetg + yellowtg;
+    totalRatioItems = greyi + whitei + greeni + bluei + purplei + orangei + yellowi;
+    totalRatio = totalRatioTradeGoods + totalRatioItems;
+
+    //
+    // Allow for ratios and change the way defaults are handled
+    //
+    /*
     uint32 totalPercent =
         greytg +
         whitetg +
@@ -670,17 +681,21 @@ void AHBConfig::SetPercentages(
 
     if (totalPercent == 0)
     {
-        maxItems = 0;
+            maxItems = 0;
     }
     else if (totalPercent != 100)
     {
-        greytg   = 0;
+    */
+    if (totalRatio == 0)
+        {
+            greytg   = 0;
         whitetg  = 27;
         greentg  = 12;
         bluetg   = 10;
         purpletg = 1;
         orangetg = 0;
         yellowtg = 0;
+        totalRatioTradeGoods = 50;
 
         greyi    = 0;
         whitei   = 10;
@@ -689,6 +704,7 @@ void AHBConfig::SetPercentages(
         purplei  = 2;
         orangei  = 0;
         yellowi  = 0;
+        totalRatioItems = 50;
     }
 
     percentGreyTradeGoods   = greytg;
@@ -1592,7 +1608,11 @@ void AHBConfig::CalculatePercents()
         orangeip +
         yellowip;
 
-    int32 diff = (maxItems - total);
+    //
+    // Allow for a ratio
+    // 
+//    int32 diff = (maxItems - total);
+    int32 diff = (GetMaxItemsTotal() - total);
 
     if (diff < 0)
     {
@@ -1945,6 +1965,11 @@ uint32 AHBConfig::GetBidsPerInterval()
     return buyerBidsPerInterval;
 }
 
+uint32 AHBConfig::GetTotalBidsPerInterval()
+{
+    return buyerBidsPerInterval + itemCountBonusCalc / 1000;
+}
+
 void AHBConfig::Initialize(std::set<uint32> botsIds)
 {
     InitializeFromFile();
@@ -2068,6 +2093,9 @@ void AHBConfig::InitializeFromSql(std::set<uint32> botsIds)
     SetMinItems(WorldDatabase.Query("SELECT minitems FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>());
     SetMaxItems(WorldDatabase.Query("SELECT maxitems FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>());
 
+    // Custom: AH Effort bonus
+    SetItemBonus(WorldDatabase.Query("SELECT itemcountbonus FROM mod_auctionhousebot WHERE auctionhouse = {}", GetAHID())->Fetch()->Get<uint32>());
+
     //
     // Load percentages
     //
@@ -2146,6 +2174,8 @@ void AHBConfig::InitializeFromSql(std::set<uint32> botsIds)
 
         LOG_INFO("module", "minItems                = {}", GetMinItems());
         LOG_INFO("module", "maxItems                = {}", GetMaxItems());
+        LOG_INFO("module", "minItemsTotal           = {}", GetMinItemsTotal());
+        LOG_INFO("module", "maxItemsTotal           = {}", GetMaxItemsTotal());
 
         LOG_INFO("module", "percentGreyTradeGoods   = {}", GetPercentages(AHB_GREY_TG));
         LOG_INFO("module", "percentWhiteTradeGoods  = {}", GetPercentages(AHB_WHITE_TG));
@@ -2520,9 +2550,10 @@ void AHBConfig::InitializeBins()
         }
 
         //
-        // Exclude items with no possible price
-        //
-
+        // Original: Exclude items with no possible price
+        // Custom: Only exclude if both missing
+        // TODO: Make this a config option
+        /*
         if (SellMethod)
         {
             if (itr->second.BuyPrice == 0)
@@ -2537,6 +2568,7 @@ void AHBConfig::InitializeBins()
                 continue;
             }
         }
+        */
 
         //
         // Exclude items with no costs associated, in any case
@@ -2649,6 +2681,15 @@ void AHBConfig::InitializeBins()
                 }
             }
         }
+
+        // Disable items by Deprecated Flag
+        if ((itr->second.Flags & 16) or (itr->second.Flags2 & 8192))
+        {
+            if (DebugOutFilters)
+                LOG_ERROR("module", "AuctionHouseBot: Item {} disabled (Deprecated/PTR/Beta/Unused Item)", itr->second.ItemId);
+            continue;
+        }
+
 
         //
         // Verify if the item is disabled or not in the whitelist
@@ -3187,7 +3228,18 @@ void AHBConfig::InitializeBins()
         // Now that the items passed all the tests, organize it by quality
         //
 
+        // 
+        // Custom: Is Trade Good?
+        //
+        bool isTradeGood = false;
         if (itr->second.Class == ITEM_CLASS_TRADE_GOODS)
+            isTradeGood = true;
+        // Or if Gem switch activated, catergorize simple & uncut gems as Trade Goods
+        // TODO: Create conf option for this
+        else if (itr->second.Class == ITEM_CLASS_GEM && itr->second.GemProperties == 0)
+            isTradeGood = true;
+
+        if (isTradeGood)
         {
             switch (itr->second.Quality)
             {
@@ -3331,4 +3383,24 @@ std::set<uint32> AHBConfig::getCommaSeparatedIntegers(std::string text)
     }
 
     return ret;
+}
+
+//
+// Custom
+// 
+void AHBConfig::SetItemBonus(uint32 value)
+{
+    itemCountBonus = value;
+    itemCountBonusCalc = value / 10;
+}
+uint32 AHBConfig::GetMinItemsTotal()
+{
+    if ((maxItems) && (minItems > maxItems))
+        return GetMaxItemsTotal();
+    else
+        return minItems + itemCountBonusCalc;
+}
+uint32 AHBConfig::GetMaxItemsTotal()
+{
+    return maxItems + itemCountBonusCalc;
 }
