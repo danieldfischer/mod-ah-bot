@@ -62,7 +62,7 @@ void AHBot_WorldScript::OnBeforeConfigLoad(bool /*reload*/)
                     {
                         if (debug)
                         {
-                            LOG_INFO("server.loading", "AHBot: Starting only one bot, account={} character={}", account, botId);
+                            LOG_INFO("server.loading", "AHBot: Starting one bot, account={} character={}", account, botId);
                         }
 
                         gBotsId.insert(botId);
@@ -101,13 +101,14 @@ void AHBot_WorldScript::OnStartup()
     //
     // Initialize the configuration items bins here, when items has been handled by the object manager
     //
+    // I think this is run 3x to filter faction items.
 
     gAllianceConfig->InitializeBins();
     gHordeConfig->InitializeBins   ();
     gNeutralConfig->InitializeBins ();
 
     //
-    // Starts the amount of bots read furing the configuration phase
+    // Starts the amount of bots read during the configuration phase
     //
 
     uint32 account = sConfigMgr->GetOption<uint32>("AuctionHouseBot.Account", 0);

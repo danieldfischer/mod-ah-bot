@@ -1576,21 +1576,21 @@ void AHBConfig::CalculatePercents()
     // to be sold in the market
     //
 
-    greytgp   = (uint32)(((double)percentGreyTradeGoods / 100.0) * maxItems);
-    whitetgp  = (uint32)(((double)percentWhiteTradeGoods / 100.0) * maxItems);
-    greentgp  = (uint32)(((double)percentGreenTradeGoods / 100.0) * maxItems);
-    bluetgp   = (uint32)(((double)percentBlueTradeGoods / 100.0) * maxItems);
-    purpletgp = (uint32)(((double)percentPurpleTradeGoods / 100.0) * maxItems);
-    orangetgp = (uint32)(((double)percentOrangeTradeGoods / 100.0) * maxItems);
-    yellowtgp = (uint32)(((double)percentYellowTradeGoods / 100.0) * maxItems);
+    greytgp   = (uint32)(((double)percentGreyTradeGoods / totalRatio) * GetMaxItemsTotal());
+    whitetgp  = (uint32)(((double)percentWhiteTradeGoods / totalRatio) * GetMaxItemsTotal());
+    greentgp  = (uint32)(((double)percentGreenTradeGoods / totalRatio) * GetMaxItemsTotal());
+    bluetgp   = (uint32)(((double)percentBlueTradeGoods / totalRatio) * GetMaxItemsTotal());
+    purpletgp = (uint32)(((double)percentPurpleTradeGoods / totalRatio) * GetMaxItemsTotal());
+    orangetgp = (uint32)(((double)percentOrangeTradeGoods / totalRatio) * GetMaxItemsTotal());
+    yellowtgp = (uint32)(((double)percentYellowTradeGoods / totalRatio) * GetMaxItemsTotal());
 
-    greyip    = (uint32)(((double)percentGreyItems / 100.0) * maxItems);
-    whiteip   = (uint32)(((double)percentWhiteItems / 100.0) * maxItems);
-    greenip   = (uint32)(((double)percentGreenItems / 100.0) * maxItems);
-    blueip    = (uint32)(((double)percentBlueItems / 100.0) * maxItems);
-    purpleip  = (uint32)(((double)percentPurpleItems / 100.0) * maxItems);
-    orangeip  = (uint32)(((double)percentOrangeItems / 100.0) * maxItems);
-    yellowip  = (uint32)(((double)percentYellowItems / 100.0) * maxItems);
+    greyip    = (uint32)(((double)percentGreyItems / totalRatio) * GetMaxItemsTotal());
+    whiteip   = (uint32)(((double)percentWhiteItems / totalRatio) * GetMaxItemsTotal());
+    greenip   = (uint32)(((double)percentGreenItems / totalRatio) * GetMaxItemsTotal());
+    blueip    = (uint32)(((double)percentBlueItems / totalRatio) * GetMaxItemsTotal());
+    purpleip  = (uint32)(((double)percentPurpleItems / totalRatio) * GetMaxItemsTotal());
+    orangeip  = (uint32)(((double)percentOrangeItems / totalRatio) * GetMaxItemsTotal());
+    yellowip  = (uint32)(((double)percentYellowItems / totalRatio) * GetMaxItemsTotal());
 
     uint32 total =
         greytgp +
@@ -1609,7 +1609,7 @@ void AHBConfig::CalculatePercents()
         yellowip;
 
     //
-    // Allow for a ratio
+    // Round up if needed.
     // 
 //    int32 diff = (maxItems - total);
     int32 diff = (GetMaxItemsTotal() - total);
@@ -2244,6 +2244,12 @@ void AHBConfig::InitializeFromSql(std::set<uint32> botsIds)
     AuctionHouseObject* auctionHouse = sAuctionMgr->GetAuctionsMap(GetAHFID());
     uint32              auctions     = auctionHouse->Getcount();
 
+    // Note: This is initialized before the auctions so it will be 0 at start.
+    if (DebugOutConfig)
+    {
+        LOG_INFO("module", "AH [{}]: Auction Count {}", GetAHID(), auctions);
+    }
+
     if (auctions)
     {
         for (AuctionHouseObject::AuctionEntryMap::const_iterator itr = auctionHouse->GetAuctionsBegin(); itr != auctionHouse->GetAuctionsEnd(); ++itr)
@@ -2357,26 +2363,26 @@ void AHBConfig::InitializeFromSql(std::set<uint32> botsIds)
                 }
             }
         }
+        if (DebugOutConfig)
+        {
+            LOG_INFO("module", "Current situation for the auctionhouse {}", GetAHID());
+            LOG_INFO("module", "    Grey   Trade Goods {}", GetItemCounts(AHB_GREY_TG));
+            LOG_INFO("module", "    White  Trade Goods {}", GetItemCounts(AHB_WHITE_TG));
+            LOG_INFO("module", "    Green  Trade Goods {}", GetItemCounts(AHB_GREEN_TG));
+            LOG_INFO("module", "    Blue   Trade Goods {}", GetItemCounts(AHB_BLUE_TG));
+            LOG_INFO("module", "    Purple Trade Goods {}", GetItemCounts(AHB_PURPLE_TG));
+            LOG_INFO("module", "    Orange Trade Goods {}", GetItemCounts(AHB_ORANGE_TG));
+            LOG_INFO("module", "    Yellow Trade Goods {}", GetItemCounts(AHB_YELLOW_TG));
+            LOG_INFO("module", "    Grey   Items       {}", GetItemCounts(AHB_GREY_I));
+            LOG_INFO("module", "    White  Items       {}", GetItemCounts(AHB_WHITE_I));
+            LOG_INFO("module", "    Green  Items       {}", GetItemCounts(AHB_GREEN_I));
+            LOG_INFO("module", "    Blue   Items       {}", GetItemCounts(AHB_BLUE_I));
+            LOG_INFO("module", "    Purple Items       {}", GetItemCounts(AHB_PURPLE_I));
+            LOG_INFO("module", "    Orange Items       {}", GetItemCounts(AHB_ORANGE_I));
+            LOG_INFO("module", "    Yellow Items       {}", GetItemCounts(AHB_YELLOW_I));
+        }
     }
 
-    if (DebugOutConfig)
-    {
-        LOG_INFO("module", "Current situation for the auctionhouse {}", GetAHID());
-        LOG_INFO("module", "    Grey   Trade Goods {}", GetItemCounts(AHB_GREY_TG));
-        LOG_INFO("module", "    White  Trade Goods {}", GetItemCounts(AHB_WHITE_TG));
-        LOG_INFO("module", "    Green  Trade Goods {}", GetItemCounts(AHB_GREEN_TG));
-        LOG_INFO("module", "    Blue   Trade Goods {}", GetItemCounts(AHB_BLUE_TG));
-        LOG_INFO("module", "    Purple Trade Goods {}", GetItemCounts(AHB_PURPLE_TG));
-        LOG_INFO("module", "    Orange Trade Goods {}", GetItemCounts(AHB_ORANGE_TG));
-        LOG_INFO("module", "    Yellow Trade Goods {}", GetItemCounts(AHB_YELLOW_TG));
-        LOG_INFO("module", "    Grey   Items       {}", GetItemCounts(AHB_GREY_I));
-        LOG_INFO("module", "    White  Items       {}", GetItemCounts(AHB_WHITE_I));
-        LOG_INFO("module", "    Green  Items       {}", GetItemCounts(AHB_GREEN_I));
-        LOG_INFO("module", "    Blue   Items       {}", GetItemCounts(AHB_BLUE_I));
-        LOG_INFO("module", "    Purple Items       {}", GetItemCounts(AHB_PURPLE_I));
-        LOG_INFO("module", "    Orange Items       {}", GetItemCounts(AHB_ORANGE_I));
-        LOG_INFO("module", "    Yellow Items       {}", GetItemCounts(AHB_YELLOW_I));
-    }
 
     //
     // Auctions buyer
@@ -2534,7 +2540,7 @@ void AHBConfig::InitializeBins()
             continue;
         }
 
-        if (itr->second.Bonding == BIND_WHEN_EQUIPED && !Bind_When_Equipped)
+        if (itr->second.Bonding == BIND_WHEN_EQUIPPED && !Bind_When_Equipped)
         {
             continue;
         }
@@ -3346,8 +3352,8 @@ void AHBConfig::InitializeBins()
         LOG_INFO("module", "Using a whitelist of {} items", uint32(SellerWhiteList.size()));
     }
 
-    // if (DebugOutConfig)
-    // {
+     if (DebugOutConfig)
+     {
         LOG_INFO("module", "loaded {} grey   trade goods", uint32(GreyTradeGoodsBin.size()));
         LOG_INFO("module", "loaded {} white  trade goods", uint32(WhiteTradeGoodsBin.size()));
         LOG_INFO("module", "loaded {} green  trade goods", uint32(GreenTradeGoodsBin.size()));
@@ -3362,7 +3368,7 @@ void AHBConfig::InitializeBins()
         LOG_INFO("module", "loaded {} purple items"      , uint32(PurpleItemsBin.size()));
         LOG_INFO("module", "loaded {} orange items"      , uint32(OrangeItemsBin.size()));
         LOG_INFO("module", "loaded {} yellow items"      , uint32(YellowItemsBin.size()));
-    // }
+     }
 }
 
 std::set<uint32> AHBConfig::getCommaSeparatedIntegers(std::string text)

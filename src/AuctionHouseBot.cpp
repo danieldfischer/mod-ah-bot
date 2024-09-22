@@ -423,19 +423,20 @@ void AuctionHouseBot::Buy(Player* AHBplayer, AHBConfig* config, WorldSession* se
 
         //
         // Custom: New logic - fully random bid
-        //  Sets a min bid based on itemvalue. ex: if sellprice model, always bid at least sellprice.
+        //  Sets a min bid based on sellprice.
         //
-        long double bidvalue = itemPrice + (bidMax - itemPrice) * bidrate;
+        long double bidvalue = prototype->SellPrice + (bidMax - prototype->SellPrice) * bidrate;
         uint32      bidprice = static_cast<uint32>(bidvalue);
 
         //
         // Check our bid is high enough to be valid. If not, correct it to minimum.
         //
-
+        /*
         if ((currentprice + auction->GetAuctionOutBid()) > bidprice)
         {
             bidprice = currentprice + auction->GetAuctionOutBid();
         }
+        */
 
         //
         // Print out debug info
@@ -455,10 +456,10 @@ void AuctionHouseBot::Buy(Player* AHBplayer, AHBConfig* config, WorldSession* se
             LOG_INFO("module", "AHBot [{}]: Expire Time: {}", _id, uint32(auction->expire_time));
             LOG_INFO("module", "AHBot [{}]: Bid Rate: {}", _id, bidrate);
             LOG_INFO("module", "AHBot [{}]: Bid Max: {}", _id, bidMax);
-            LOG_INFO("module", "AHBot [{}]: Bid Value: {}", _id, bidvalue);
+//            LOG_INFO("module", "AHBot [{}]: Bid Value: {}", _id, bidvalue);   // redundant with bidprice
             LOG_INFO("module", "AHBot [{}]: Bid Price: {}", _id, bidprice);
             LOG_INFO("module", "AHBot [{}]: Item GUID: {}", _id, auction->item_guid.ToString());
-            LOG_INFO("module", "AHBot [{}]: Item Template: {}", _id, auction->item_template);
+            LOG_INFO("module", "AHBot [{}]: Item Template: {}", _id, auction->item_template);  // TODO: This is failing now "Wrong format occurred (argument not found)"
             LOG_INFO("module", "AHBot [{}]: Item Info:");
             LOG_INFO("module", "AHBot [{}]: Item ID: {}", _id, prototype->ItemId);
             LOG_INFO("module", "AHBot [{}]: Buy Price: {}", _id, prototype->BuyPrice);
@@ -477,7 +478,10 @@ void AuctionHouseBot::Buy(Player* AHBplayer, AHBConfig* config, WorldSession* se
         if ((currentprice + auction->GetAuctionOutBid()) > bidprice)
             //            bidprice = currentprice + auction->GetAuctionOutBid();
         {
-            LOG_INFO("module", "AHBuyer: Random bid too low, skipping.");
+            if (config->DebugOutBuyer)
+            {
+                LOG_INFO("module", "AHBuyer: Random bid too low, skipping.");
+            }
             continue;
         }
 
@@ -626,11 +630,18 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
     // 
     // Check if we are clear to proceed
     // 
+    // Note: The aboveMin, aboveMax are pointless as it exits before outputting them.
+    // TODO: What is the point of a min and max if it exits at min?
 
     bool   aboveMin = false;
     bool   aboveMax = false;
     uint32 auctions = getNofAuctions(config, auctionHouse, AHBplayer->GetGUID());
     uint32 items = 0;
+
+    if (config->DebugOutSeller)
+    {
+        LOG_INFO("module", "AHBot [{}], AH [{}]: Current auction count {}", _id, config->GetAHID(), auctions);
+    }
 
     if (auctions >= minItems)
     {
@@ -638,7 +649,7 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
 
         if (config->DebugOutSeller)
         {
-            LOG_ERROR("module", "AHBot [{}]: Auctions above minimum", _id);
+            LOG_ERROR("module", "AHBot [{}], AH [{}]: Auctions above minimum", _id, config->GetAHID());
         }
 
         return;
@@ -650,7 +661,7 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
 
         if (config->DebugOutSeller)
         {
-            LOG_ERROR("module", "AHBot [{}]: Auctions at or above maximum", _id);
+            LOG_ERROR("module", "AHBot [{}], AH [{}]: Auctions at or above maximum", _id, config->GetAHID());
         }
 
         return;
@@ -700,6 +711,42 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
     uint32 purpleItems = config->GetItemCounts(AHB_PURPLE_I);
     uint32 orangeItems = config->GetItemCounts(AHB_ORANGE_I);
     uint32 yellowItems = config->GetItemCounts(AHB_YELLOW_I);
+
+
+    if (config->DebugOutSeller)
+    {
+        LOG_INFO("module", "AHBot [{}], AH [{}]: Current Auctions by category", _id, config->GetAHID());
+        LOG_INFO("module", " {} grey   trade goods", greyTGoods);
+        LOG_INFO("module", " {} white  trade goods", whiteTGoods);
+        LOG_INFO("module", " {} green  trade goods", greenTGoods);
+        LOG_INFO("module", " {} blue   trade goods", blueTGoods);
+        LOG_INFO("module", " {} purple trade goods", purpleTGoods);
+        LOG_INFO("module", " {} orange trade goods", orangeTGoods);
+        LOG_INFO("module", " {} yellow trade goods", yellowTGoods);
+        LOG_INFO("module", " {} grey   items", greyItems);
+        LOG_INFO("module", " {} white  items", whiteItems);
+        LOG_INFO("module", " {} green  items", greenItems);
+        LOG_INFO("module", " {} blue   items", blueItems);
+        LOG_INFO("module", " {} purple items", purpleItems);
+        LOG_INFO("module", " {} orange items", orangeItems);
+        LOG_INFO("module", " {} yellow items", yellowItems);
+        LOG_INFO("module", "");
+        LOG_INFO("module", "AHBot [{}], AH [{}]: Maximum Auctions by category", _id, config->GetAHID());
+        LOG_INFO("module", " {} grey   trade goods", greyTGcount);
+        LOG_INFO("module", " {} white  trade goods", whiteTGcount);
+        LOG_INFO("module", " {} green  trade goods", greenTGcount);
+        LOG_INFO("module", " {} blue   trade goods", blueTGcount);
+        LOG_INFO("module", " {} purple trade goods", purpleTGcount);
+        LOG_INFO("module", " {} orange trade goods", orangeTGcount);
+        LOG_INFO("module", " {} yellow trade goods", yellowTGcount);
+        LOG_INFO("module", " {} grey   items", greyIcount);
+        LOG_INFO("module", " {} white  items", whiteIcount);
+        LOG_INFO("module", " {} green  items", greenIcount);
+        LOG_INFO("module", " {} blue   items", blueIcount);
+        LOG_INFO("module", " {} purple items", purpleIcount);
+        LOG_INFO("module", " {} orange items", orangeIcount);
+        LOG_INFO("module", " {} yellow items", yellowIcount);
+    }
 
     //
     // Only insert a few at a time, so they dont appear all at once
@@ -1040,6 +1087,7 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
                     buyoutPrice = prototype->BuyPrice / 5;
             }
 
+            // TODO: This does not appear to be as random as it should be
             if (prototype->Quality <= AHB_MAX_QUALITY)
             {
                 if (config->GetMaxStack(prototype->Quality) > 1 && item->GetMaxStackCount() > 1)
@@ -1185,7 +1233,7 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
 
             if (config->TraceSeller)
             {
-                LOG_INFO("module", "AHBot [{}]: New stack ah={}, id={}, stack={}, bid={}, buyout={}", _id, config->GetAHID(), itemID, stackCount, auctionEntry->startbid, auctionEntry->buyout);
+                LOG_INFO("module", "AHBot [{}], AH [{}]: New Sale id={}, stack={}, bid={}, buyout={}", _id, config->GetAHID(), itemID, stackCount, auctionEntry->startbid, auctionEntry->buyout);
             }
         }
 
@@ -1197,7 +1245,7 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
 
     if (config->TraceSeller)
     {
-        LOG_INFO("module", "AHBot [{}]: auctionhouse {}, req={}, sold={}, aboveMin={}, aboveMax={}, loopBrk={}, noNeed={}, tooMany={}, binEmpty={}, err={}", _id, config->GetAHID(), items, noSold, aboveMin, aboveMax, loopBrk, noNeed, tooMany, binEmpty, err);
+        LOG_INFO("module", "AHBot [{}], AH [{}]: Sale Results req={}, sold={}, aboveMin={}, aboveMax={}, loopBrk={}, noNeed={}, tooMany={}, binEmpty={}, err={}", _id, config->GetAHID(), items, noSold, aboveMin, aboveMax, loopBrk, noNeed, tooMany, binEmpty, err);
     }
 }
 
