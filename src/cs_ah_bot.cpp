@@ -35,6 +35,51 @@ using namespace Acore::ChatCommands;
 
 class ah_bot_commandscript : public CommandScript
 {
+private:
+    static ItemQualities stringToItemQualities(const char* name, int length)
+    {
+        // 
+        // Translates a string into ItemQualities enum
+        // 
+
+        if (strncmp(name, "grey", length) == 0)
+        {
+            return ITEM_QUALITY_POOR;
+        }
+
+        if (strncmp(name, "white", length) == 0)
+        {
+            return ITEM_QUALITY_NORMAL;
+        }
+
+        if (strncmp(name, "green", length) == 0)
+        {
+            return ITEM_QUALITY_UNCOMMON;
+        }
+
+        if (strncmp(name, "blue", length) == 0)
+        {
+            return ITEM_QUALITY_RARE;
+        }
+
+        if (strncmp(name, "purple", length) == 0)
+        {
+            return ITEM_QUALITY_EPIC;
+        }
+
+        if (strncmp(name, "orange", length) == 0)
+        {
+            return ITEM_QUALITY_LEGENDARY;
+        }
+
+        if (strncmp(name, "yellow", length) == 0)
+        {
+            return ITEM_QUALITY_ARTIFACT;
+        }
+
+        return static_cast<ItemQualities>(-1); // Invalid
+    }
+
 public:
     ah_bot_commandscript() : CommandScript("ah_bot_commandscript")
     {
@@ -68,6 +113,7 @@ public:
         // Support function the item quality
         //
 
+        // TODO: Remove after merge
         auto qualityStringToEnum = [](const char* qualityName, int maxCount)
         {
             if (strncmp(qualityName, "grey", maxCount) == 0)
@@ -148,6 +194,24 @@ public:
 
             return true;
         }
+        else if (strncmp(opt, "usemarketprice", l) == 0)
+        {
+            char* param1 = strtok(NULL, " ");
+
+            if (!param1)
+            {
+                handler->PSendSysMessage("Syntax is: ahbotoptions useMarketPrice $state (0 off 1 on)");
+                return false;
+            }
+
+            // TODO: after merge
+            for (AuctionHouseBot* bot : gBots)
+            {
+//                bot->Commands(AHBotCommand::useMarketPrice, 0, 0, param1);
+            }
+
+            return true;
+        }
 
         //
         // Retrieve the auction house type
@@ -177,9 +241,7 @@ public:
 
         if (!opt)
         {
-            handler->PSendSysMessage("Invalid syntax");
-            handler->PSendSysMessage("Try ahbotoptions help to see a list of options.");
-
+            handler->PSendSysMessage("Invalid syntax; the auction house id must be 2, 6 or 7");
             return false;
         }
 
@@ -192,6 +254,7 @@ public:
             handler->PSendSysMessage("AHBot commands:");
             handler->PSendSysMessage("buyer - enable/disable buyer");
             handler->PSendSysMessage("seller - enable/disabler seller");
+            handler->PSendSysMessage("usemarketprice - enable/disabler selling at market price");
             handler->PSendSysMessage("ahexpire - remove all bot auctions");
             handler->PSendSysMessage("minitems - set min auctions");
             handler->PSendSysMessage("maxitems - set max auctions");
@@ -347,7 +410,7 @@ public:
                 return false;
             }
 
-            auto quality = qualityStringToEnum(param1, l);
+            auto quality = stringToItemQualities(param1, l);
 
             if (quality != static_cast<ItemQualities>(-1))
             {
@@ -373,7 +436,7 @@ public:
                 return false;
             }
 
-            auto quality = qualityStringToEnum(param1, l);
+            auto quality = stringToItemQualities(param1, l);
 
             if (quality != static_cast<ItemQualities>(-1))
             {
@@ -407,7 +470,7 @@ public:
                 return false;
             }
 
-            auto quality = qualityStringToEnum(param1, l);
+            auto quality = stringToItemQualities(param1, l);
 
             if (quality != static_cast<ItemQualities>(-1))
             {
@@ -441,7 +504,7 @@ public:
                 return false;
             }
 
-            auto quality = qualityStringToEnum(param1, l);
+            auto quality = stringToItemQualities(param1, l);
 
             if (quality != static_cast<ItemQualities>(-1))
             {
@@ -474,7 +537,7 @@ public:
             //    return false;
             // }
 
-            auto quality = qualityStringToEnum(param1, l);
+            auto quality = stringToItemQualities(param1, l);
 
             if (quality != static_cast<ItemQualities>(-1))
             {
@@ -500,7 +563,7 @@ public:
                 return false;
             }
 
-            auto quality = qualityStringToEnum(param1, l);
+            auto quality = stringToItemQualities(param1, l);
 
             if (quality != static_cast<ItemQualities>(-1))
             {
