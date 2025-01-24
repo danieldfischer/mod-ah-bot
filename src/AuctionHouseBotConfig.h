@@ -25,6 +25,7 @@
 #include <string>
 
 #include "ObjectMgr.h"
+#include "QueryResult.h"
 
 class AHBConfig
 {

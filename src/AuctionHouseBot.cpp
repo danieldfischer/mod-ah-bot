@@ -1268,297 +1268,22 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
         {
             ++loopbreaker;
 
-            /* Old selection code
-            // 
-            // Get a random item from the bins
-            // 
-
-            uint32 choice = urand(0, 13);
-
-            switch (choice)
-            {
-            case AHB_GREY_I:
-                if ((config->GreyItemsBin.size() > 0) && (greyItems < greyIcount))
-                {
-                    itemID = getElement(config->GreyItemsBin, urand(0, config->GreyItemsBin.size() - 1));
-                }
-                else
-                {
-                    noNeed++;
-                    continue;
-                }
-
-                break;
-
-            case AHB_WHITE_I:
-                if ((config->WhiteItemsBin.size() > 0) && (whiteItems < whiteIcount))
-                {
-                    itemID = getElement(config->WhiteItemsBin, urand(0, config->WhiteItemsBin.size() - 1));
-                }
-                else
-                {
-                    noNeed++;
-                    continue;
-                }
-
-                break;
-
-            case AHB_GREEN_I:
-                if ((config->GreenItemsBin.size() > 0) && (greenItems < greenIcount))
-                {
-                    itemID = getElement(config->GreenItemsBin, urand(0, config->GreenItemsBin.size() - 1));
-                }
-                else
-                {
-                    noNeed++;
-                    continue;
-                }
-
-                break;
-
-            case AHB_BLUE_I:
-                if ((config->BlueItemsBin.size() > 0) && (blueItems < blueIcount))
-                {
-                    itemID = getElement(config->BlueItemsBin, urand(0, config->BlueItemsBin.size() - 1));
-                }
-                else
-                {
-                    noNeed++;
-                    continue;
-                }
-
-                break;
-
-            case AHB_PURPLE_I:
-                if ((config->PurpleItemsBin.size() > 0) && (purpleItems < purpleIcount))
-                {
-                    itemID = getElement(config->PurpleItemsBin, urand(0, config->PurpleItemsBin.size() - 1));
-                }
-                else
-                {
-                    noNeed++;
-                    continue;
-                }
-
-                break;
-
-            case AHB_ORANGE_I:
-                if ((config->OrangeItemsBin.size() > 0) && (orangeItems < orangeIcount))
-                {
-                    itemID = getElement(config->OrangeItemsBin, urand(0, config->OrangeItemsBin.size() - 1));
-                }
-                else
-                {
-                    noNeed++;
-                    continue;
-                }
-
-                break;
-
-            case AHB_YELLOW_I:
-                if ((config->YellowItemsBin.size() > 0) && (yellowItems < yellowIcount))
-                {
-                    itemID = getElement(config->YellowItemsBin, urand(0, config->YellowItemsBin.size() - 1));
-                }
-                else
-                {
-                    noNeed++;
-                    continue;
-                }
-
-                break;
-
-            case AHB_GREY_TG:
-                if ((config->GreyTradeGoodsBin.size() > 0) && (greyTGoods < greyTGcount))
-                {
-                    itemID = getElement(config->GreyTradeGoodsBin, urand(0, config->GreyTradeGoodsBin.size() - 1));
-                }
-                else
-                {
-                    noNeed++;
-                    continue;
-                }
-
-                break;
-
-            case AHB_WHITE_TG:
-                if ((config->WhiteTradeGoodsBin.size() > 0) && (whiteTGoods < whiteTGcount))
-                {
-                    itemID = getElement(config->WhiteTradeGoodsBin, urand(0, config->WhiteTradeGoodsBin.size() - 1));
-                }
-                else
-                {
-                    noNeed++;
-                    continue;
-                }
-
-                break;
-
-            case AHB_GREEN_TG:
-                if ((config->GreenTradeGoodsBin.size() > 0) && (greenTGoods < greenTGcount))
-                {
-                    itemID = getElement(config->GreenTradeGoodsBin, urand(0, config->GreenTradeGoodsBin.size() - 1));
-                }
-                else
-                {
-                    noNeed++;
-                    continue;
-                }
-
-                break;
-
-            case AHB_BLUE_TG:
-                if ((config->BlueTradeGoodsBin.size() > 0) && (blueTGoods < blueTGcount))
-                {
-                    itemID = getElement(config->BlueTradeGoodsBin, urand(0, config->BlueTradeGoodsBin.size() - 1));
-                }
-                else
-                {
-                    noNeed++;
-                    continue;
-                }
-
-                break;
-
-            case AHB_PURPLE_TG:
-                if ((config->PurpleTradeGoodsBin.size() > 0) && (purpleTGoods < purpleTGcount))
-                {
-                    itemID = getElement(config->PurpleTradeGoodsBin, urand(0, config->PurpleTradeGoodsBin.size() - 1));
-                }
-                else
-                {
-                    noNeed++;
-                    continue;
-                }
-
-                break;
-
-            case AHB_ORANGE_TG:
-                if ((config->OrangeTradeGoodsBin.size() > 0) && (orangeTGoods < orangeTGcount))
-                {
-                    itemID = getElement(config->OrangeTradeGoodsBin, urand(0, config->OrangeTradeGoodsBin.size() - 1));
-                }
-                else
-                {
-                    noNeed++;
-                    continue;
-                }
-
-                break;
-
-            case AHB_YELLOW_TG:
-                if ((config->YellowTradeGoodsBin.size() > 0) && (yellowTGoods < yellowTGcount))
-                {
-                    itemID = getElement(config->YellowTradeGoodsBin, urand(0, config->YellowTradeGoodsBin.size() - 1));
-                }
-                else
-                {
-                    noNeed++;
-                    continue;
-                }
-
-                break;
-
-            default:
-                err++;
-
-                if (config->DebugOutSeller)
-                {
-                    LOG_ERROR("module", "AHBot [{}]: itemID Switch - Default Reached", _id);
-                }
-
-                break;
-            }
-
-            // 
-            // Check if it's a valid selection
-            // 
-
-            if (itemID == 0)
-            {
-                binEmpty++;
-
-                if (config->DebugOutSeller)
-                {
-                    LOG_ERROR("module", "AHBot [{}]: No item could be selected in the bin {}", _id, choice);
-                }
-
-                continue;
-            }
-            */
-
             //
-            // Select, in rarity order, a new random item
-            //
+            // Select, in reverse rarity order, a new random item
+            // Note: original order means higher quality items tend to not get posted.
 
-            // Poor
+            // Artifact
 
-            if ((config->GreyItemsBin.size() > 0) && (greyItems < greyIcount))
+            if (itemID == 0 && (config->YellowItemsBin.size() > 0) && (yellowItems < yellowIcount))
             {
-                choice = 0;
-                itemID = getElement(config->GreyItemsBin, urand(0, config->GreyItemsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
+                choice = 6;
+                itemID = getElement(config->YellowItemsBin, urand(0, config->YellowItemsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
             }
 
-            if (itemID == 0 && (config->GreyTradeGoodsBin.size() > 0) && (greyTGoods < greyTGcount))
+            if (itemID == 0 && (config->YellowTradeGoodsBin.size() > 0) && (yellowTGoods < yellowTGcount))
             {
-                choice = 7;
-                itemID = getElement(config->GreyTradeGoodsBin, urand(0, config->GreyTradeGoodsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
-            }
-
-            // Normal
-
-            if (itemID == 0 && (config->WhiteItemsBin.size() > 0) && (whiteItems < whiteIcount))
-            {
-                choice = 1;
-                itemID = getElement(config->WhiteItemsBin, urand(0, config->WhiteItemsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
-            }
-
-            if (itemID == 0 && (config->WhiteTradeGoodsBin.size() > 0) && (whiteTGoods < whiteTGcount))
-            {
-                choice = 8;
-                itemID = getElement(config->WhiteTradeGoodsBin, urand(0, config->WhiteTradeGoodsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
-            }
-
-            // Uncommon
-
-            if (itemID == 0 && (config->GreenItemsBin.size() > 0) && (greenItems < greenIcount))
-            {
-                choice = 2;
-                itemID = getElement(config->GreenItemsBin, urand(0, config->GreenItemsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
-            }
-
-            if (itemID == 0 && (config->GreenTradeGoodsBin.size() > 0) && (greenTGoods < greenTGcount))
-            {
-                choice = 9;
-                itemID = getElement(config->GreenTradeGoodsBin, urand(0, config->GreenTradeGoodsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
-            }
-
-            // Rare
-
-            if (itemID == 0 && (config->BlueItemsBin.size() > 0) && (blueItems < blueIcount))
-            {
-                choice = 3;
-                itemID = getElement(config->BlueItemsBin, urand(0, config->BlueItemsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
-            }
-
-            if (itemID == 0 && (config->BlueTradeGoodsBin.size() > 0) && (blueTGoods < blueTGcount))
-            {
-                choice = 10;
-                itemID = getElement(config->BlueTradeGoodsBin, urand(0, config->BlueTradeGoodsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
-            }
-
-            // Epic
-
-            if (itemID == 0 && (config->PurpleItemsBin.size() > 0) && (purpleItems < purpleIcount))
-            {
-                choice = 4;
-                itemID = getElement(config->PurpleItemsBin, urand(0, config->PurpleItemsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
-            }
-
-            if (itemID == 0 && (config->PurpleTradeGoodsBin.size() > 0) && (purpleTGoods < purpleTGcount))
-            {
-                choice = 11;
-                itemID = getElement(config->PurpleTradeGoodsBin, urand(0, config->PurpleTradeGoodsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
+                choice = 13;
+                itemID = getElement(config->YellowTradeGoodsBin, urand(0, config->YellowTradeGoodsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
             }
 
             // Legendary
@@ -1575,18 +1300,74 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
                 itemID = getElement(config->OrangeTradeGoodsBin, urand(0, config->OrangeTradeGoodsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
             }
 
-            // Artifact
+            // Epic
 
-            if (itemID == 0 && (config->YellowItemsBin.size() > 0) && (yellowItems < yellowIcount))
+            if (itemID == 0 && (config->PurpleItemsBin.size() > 0) && (purpleItems < purpleIcount))
             {
-                choice = 6;
-                itemID = getElement(config->YellowItemsBin, urand(0, config->YellowItemsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
+                choice = 4;
+                itemID = getElement(config->PurpleItemsBin, urand(0, config->PurpleItemsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
             }
 
-            if (itemID == 0 && (config->YellowTradeGoodsBin.size() > 0) && (yellowTGoods < yellowTGcount))
+            if (itemID == 0 && (config->PurpleTradeGoodsBin.size() > 0) && (purpleTGoods < purpleTGcount))
             {
-                choice = 13;
-                itemID = getElement(config->YellowTradeGoodsBin, urand(0, config->YellowTradeGoodsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
+                choice = 11;
+                itemID = getElement(config->PurpleTradeGoodsBin, urand(0, config->PurpleTradeGoodsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
+            }
+
+            // Rare
+
+            if (itemID == 0 && (config->BlueItemsBin.size() > 0) && (blueItems < blueIcount))
+            {
+                choice = 3;
+                itemID = getElement(config->BlueItemsBin, urand(0, config->BlueItemsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
+            }
+
+            if (itemID == 0 && (config->BlueTradeGoodsBin.size() > 0) && (blueTGoods < blueTGcount))
+            {
+                choice = 10;
+                itemID = getElement(config->BlueTradeGoodsBin, urand(0, config->BlueTradeGoodsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
+            }
+
+            // Uncommon
+
+            if (itemID == 0 && (config->GreenItemsBin.size() > 0) && (greenItems < greenIcount))
+            {
+                choice = 2;
+                itemID = getElement(config->GreenItemsBin, urand(0, config->GreenItemsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
+            }
+
+            if (itemID == 0 && (config->GreenTradeGoodsBin.size() > 0) && (greenTGoods < greenTGcount))
+            {
+                choice = 9;
+                itemID = getElement(config->GreenTradeGoodsBin, urand(0, config->GreenTradeGoodsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
+            }
+
+            // Normal
+
+            if (itemID == 0 && (config->WhiteItemsBin.size() > 0) && (whiteItems < whiteIcount))
+            {
+                choice = 1;
+                itemID = getElement(config->WhiteItemsBin, urand(0, config->WhiteItemsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
+            }
+
+            if (itemID == 0 && (config->WhiteTradeGoodsBin.size() > 0) && (whiteTGoods < whiteTGcount))
+            {
+                choice = 8;
+                itemID = getElement(config->WhiteTradeGoodsBin, urand(0, config->WhiteTradeGoodsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
+            }
+
+            // Poor
+
+            if ((config->GreyItemsBin.size() > 0) && (greyItems < greyIcount))
+            {
+                choice = 0;
+                itemID = getElement(config->GreyItemsBin, urand(0, config->GreyItemsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
+            }
+
+            if (itemID == 0 && (config->GreyTradeGoodsBin.size() > 0) && (greyTGoods < greyTGcount))
+            {
+                choice = 7;
+                itemID = getElement(config->GreyTradeGoodsBin, urand(0, config->GreyTradeGoodsBin.size() - 1), _id, config->DuplicatesCount, auctionHouse);
             }
 
             if (itemID == 0)
@@ -1607,37 +1388,6 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
             loopBrk++;
             continue;
         }
-
-        /* this is inline now
-            // 
-            // Check how many stacks of this items are sold by the bot.
-            // This avoid unfortunate rolls to overwhelm the market with the same products on low population, especially with whitelists.
-            // 
-
-            if (config->DuplicatesCount > 0)
-            {
-                uint32 noStacks = 0;
-
-                for (AuctionHouseObject::AuctionEntryMap::const_iterator itr = auctionHouse->GetAuctionsBegin(); itr != auctionHouse->GetAuctionsEnd(); ++itr)
-                {
-                    AuctionEntry* Aentry = itr->second;
-
-                    if (AHBplayer->GetGUID() == Aentry->owner)
-                    {
-                        if (itemID == Aentry->item_template)
-                        {
-                            noStacks++;
-                        }
-                    }
-                }
-
-                if (noStacks >= config->DuplicatesCount)
-                {
-                    tooMany++;
-                    continue;
-                }
-            }
-            */
 
         // 
         // Retrieve information about the selected item
@@ -1867,14 +1617,6 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
                 LOG_INFO("module", "AHBot [{}], AH [{}]: New Sale id={}, stack={}, bid={}, buyout={}", _id, config->GetAHID(), itemID, stackCount, auctionEntry->startbid, auctionEntry->buyout);
             }
         }
-
-        /*
-        if (itemID == 0 || loopbreaker > 50)
-        {
-            loopBrk++;
-        }
-    }
-        */
 
     if (config->TraceSeller)
     {
