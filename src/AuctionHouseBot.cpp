@@ -643,7 +643,7 @@ void AuctionHouseBot::SellNew(Player* AHBplayer, AHBConfig* config)
     // Retrieve the auction house situation
     // 
 
-    AuctionHouseEntry const* ahEntry = sAuctionMgr->GetAuctionHouseEntry(config->GetAHFID());
+    AuctionHouseEntry const* ahEntry = sAuctionMgr->GetAuctionHouseEntryFromFactionTemplate(config->GetAHFID());
 
     if (!ahEntry)
     {
@@ -1007,7 +1007,7 @@ void AuctionHouseBot::SellNew(Player* AHBplayer, AHBConfig* config)
 
         AuctionEntry* auctionEntry = new AuctionEntry();
         auctionEntry->Id = sObjectMgr->GenerateAuctionID();
-        auctionEntry->houseId = config->GetAHID();
+        auctionEntry->houseId = AuctionHouseId(config->GetAHID());
         auctionEntry->item_guid = item->GetGUID();
         auctionEntry->item_template = item->GetEntry();
         auctionEntry->itemCount = item->GetCount();
@@ -1134,7 +1134,7 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
     // Retrieve the auction house situation
     // 
 
-    AuctionHouseEntry const* ahEntry = sAuctionMgr->GetAuctionHouseEntry(config->GetAHFID());
+    AuctionHouseEntry const* ahEntry = sAuctionMgr->GetAuctionHouseEntryFromFactionTemplate(config->GetAHFID());
 
     if (!ahEntry)
     {
@@ -1524,7 +1524,7 @@ void AuctionHouseBot::Sell(Player* AHBplayer, AHBConfig* config)
 
             AuctionEntry* auctionEntry = new AuctionEntry();
             auctionEntry->Id = sObjectMgr->GenerateAuctionID();
-            auctionEntry->houseId = config->GetAHID();
+            auctionEntry->houseId = AuctionHouseId(config->GetAHID());
             auctionEntry->item_guid = item->GetGUID();
             auctionEntry->item_template = item->GetEntry();
             auctionEntry->itemCount = item->GetCount();
@@ -1647,7 +1647,7 @@ void AuctionHouseBot::Update()
 
     std::string accountName = "AuctionHouseBot" + std::to_string(_account);
 
-    WorldSession _session(_account, std::move(accountName), nullptr, SEC_PLAYER, sWorld->getIntConfig(CONFIG_EXPANSION), 0, LOCALE_enUS, 0, false, false, 0);
+    WorldSession _session(_account, std::move(accountName), 0, nullptr, SEC_PLAYER, sWorld->getIntConfig(CONFIG_EXPANSION), 0, LOCALE_enUS, 0, false, false, 0);
 
     Player _AHBplayer(&_session);
     _AHBplayer.Initialize(_id);
